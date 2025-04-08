@@ -1,0 +1,11 @@
+run:
+  uv run main.py
+
+install:
+  uv tool install --reinstall .
+
+test:
+  uv run pytest -vv
+
+dev-install:
+  uv tool install --reinstall -e ".[dev]"

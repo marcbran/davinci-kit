@@ -1,0 +1,6 @@
+
+# Testing
+We don't modify code and the tests for it at the same time
+We don't take values from the tests and hardcode them into the implementation
+We can run the tests for this project with the command "just test"
+After running the tests, if there are any test failures please ask me which failure to focus on
