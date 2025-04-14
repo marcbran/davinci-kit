@@ -38,7 +38,7 @@ def get():
         timeline = davinci.get_current_timeline()
         click.echo(json.dumps({
             "name": timeline.GetName(),
-            "fps": timeline.GetSetting("fps"),
+            "framerate": timeline.GetSetting("timelineFrameRate"),
             "start_frame": timeline.GetStartFrame(),
             "end_frame": timeline.GetEndFrame(),
             "track_count": {
@@ -63,9 +63,40 @@ def get():
         item = davinci.get_current_video_item()
         click.echo(json.dumps({
             "name": item.GetName(),
-            "start_frame": item.GetStart(),
-            "end_frame": item.GetEnd(),
-            "duration": item.GetDuration()
+            "start": item.GetStart(),
+            "end": item.GetEnd(),
+            "duration": item.GetDuration(),
+            "left_offset": item.GetLeftOffset(),
+            "right_offset": item.GetRightOffset(),
+        }, indent=2))
+    except davinci.DavinciError as e:
+        click.echo(str(e), err=True)
+        return 1
+
+@cli.group()
+def media_pool_item():
+    """Commands for working with the current media pool item."""
+    pass
+
+@media_pool_item.command()
+def get():
+    """Get information about the current media pool item."""
+    try:
+        item = davinci.get_current_media_pool_item()
+        file = item.GetClipProperty("File Path")
+        proxy = item.GetClipProperty('Proxy Media Path')
+        media_start = int(item.GetClipProperty("Start"))
+        media_end = int(item.GetClipProperty("End"))
+        width, height = map(int, item.GetClipProperty("Resolution").split('x'))
+        framerate = davinci.get_framerate(file)
+        click.echo(json.dumps({
+            "file": file,
+            "proxy": proxy,
+            'framerate': framerate,
+            "media_start": media_start,
+            "media_end": media_end,
+            "width": width,
+            "height": height,
         }, indent=2))
     except davinci.DavinciError as e:
         click.echo(str(e), err=True)
@@ -77,23 +108,15 @@ def comp():
     pass
 
 @comp.command()
-def get():
-    """Get information about the current composition."""
-    try:
-        composition = davinci.get_current_composition()
-        click.echo(json.dumps({}, indent=2))
-    except davinci.DavinciError as e:
-        click.echo(str(e), err=True)
-        return 1
-
-@comp.command()
+@click.option('--clear', 'clear', is_flag=True, help='Deletes all existing compositions in the current video item')
+@click.option('--add', 'add', is_flag=True, help='Adds a new composition to the current video item')
 @click.option('--json', 'output_json', is_flag=True, help='Output the setting as parsed JSON')
-def copy(output_json):
+def copy(clear, add, output_json):
     """Copy the selected nodes from the current composition."""
     try:
         original_clipboard = pyperclip.paste()
         
-        composition = davinci.get_current_composition()
+        composition = davinci.get_composition(clear, add)
         composition.Copy()
         settings = pyperclip.paste()
         
@@ -111,8 +134,10 @@ def copy(output_json):
         pyperclip.copy(original_clipboard)
 
 @comp.command()
+@click.option('--clear', 'clear', is_flag=True, help='Deletes all existing compositions in the current video item')
+@click.option('--add', 'add', is_flag=True, help='Adds a new composition to the current video item')
 @click.option('--json', 'input_json', is_flag=True, help='Parse the input as JSON and convert to Lua table format')
-def paste(input_json):
+def paste(clear, add, input_json):
     """Paste content from stdin into the current composition."""
     try:
         original_clipboard = pyperclip.paste()
@@ -127,9 +152,11 @@ def paste(input_json):
             except json.JSONDecodeError as e:
                 click.echo(f"Error parsing JSON: {str(e)}", err=True)
                 return 1
-        
+
+        click.echo(settings)
+
         pyperclip.copy(settings)
-        composition = davinci.get_current_composition()
+        composition = davinci.get_composition(clear, add)
         composition.Paste()
         
     except davinci.DavinciError as e:

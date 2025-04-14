@@ -51,6 +51,13 @@ TEST_CASES = [
         None
     ),
     
+    # Integer keys
+    (
+        "{ [1] = 'one', [2] = 'two', [3] = 'three' }",
+        {"1": "one", "2": "two", "3": "three"},
+        None
+    ),
+    
     # Mixed type arrays
     (
         "{ mixed = { 1, 'two', true, { x = 1 }, nil, { 1, 2 } } }",
@@ -185,7 +192,12 @@ TEST_CASES = [
     # Tables with trailing commas in different positions
     ("{ a = 1, b = 2, }", {"a": 1, "b": 2}, "{ a = 1, b = 2 }"),
     ("{ arr = { 1, 2, 3, }, }", {"arr": [1, 2, 3]}, "{ arr = { 1, 2, 3 } }"),
-    
+   
+    # Tables with mixed array and object values
+    ("{ 1, b = 2, }", {"1": 1, "b": 2}, "{ [1] = 1, b = 2 }"),
+    ("{ 2.3, b = 2, }", {"1": 2.3, "b": 2}, "{ [1] = 2.3, b = 2 }"),
+    ("{ a = 1, 2, }", {"a": 1, "1": 2}, "{ a = 1, [1] = 2 }"),
+     
     # Tables coming from DaVinci Resolve
     (
         "OperatorInfo { Pos = { -605, -49.5 } }",
@@ -200,7 +212,7 @@ TEST_CASES = [
         {
             "Gamut.SLogVersion": {
                 "__name__": "Input",
-                "Value": {"__name__": "FuID", 0: "SLog2"}
+                "Value": {"__name__": "FuID", "0": "SLog2"}
             }
         },
         "{ ['Gamut.SLogVersion'] = Input { Value = FuID { [0] = 'SLog2' } } }"
@@ -211,9 +223,9 @@ TEST_CASES = [
         "MultiArray { 'first', 'second', 'third' }",
         {
             "__name__": "MultiArray",
-            0: "first",
-            1: "second",
-            2: "third"
+            "0": "first",
+            "1": "second",
+            "2": "third"
         },
         "MultiArray { [0] = 'first', [1] = 'second', [2] = 'third' }"
     ),

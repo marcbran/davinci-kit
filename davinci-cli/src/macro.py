@@ -170,6 +170,7 @@ def _parse_table(content: str) -> Dict[str, Any]:
     string_char = None
     brace_count = 0
     parsing_key = True
+    numeric_index = 1  # Track numeric indices for implicit keys
     
     i = 0
     while i < len(content):
@@ -215,20 +216,60 @@ def _parse_table(content: str) -> Dict[str, Any]:
         # Handle pair separator
         elif char == "," and not in_string and brace_count == 0:
             key = current_key.strip()
-            # Handle square bracket notation
-            if key.startswith("[") and key.endswith("]"):
-                inner_key = key[1:-1].strip()
-                if inner_key.startswith("'") and inner_key.endswith("'"):
-                    key = inner_key[1:-1]
-                elif inner_key.startswith('"') and inner_key.endswith('"'):
-                    key = inner_key[1:-1]
-            # Handle quoted keys
-            elif key.startswith("'") and key.endswith("'"):
-                key = key[1:-1]
-            elif key.startswith('"') and key.endswith('"'):
-                key = key[1:-1]
             value = current_value.strip()
-            result[key] = _parse_value(value, key)
+            
+            # Handle implicit numeric keys (when there's no equals sign)
+            if not value and key:
+                # Check if it's a number (integer or float)
+                is_number = False
+                try:
+                    # Try to parse as a float
+                    float_val = float(key)
+                    is_number = True
+                except ValueError:
+                    pass
+                
+                if is_number:
+                    # This is an implicit numeric key
+                    result[str(numeric_index)] = float_val
+                    numeric_index += 1
+                else:
+                    # Handle square bracket notation
+                    if key.startswith("[") and key.endswith("]"):
+                        inner_key = key[1:-1].strip()
+                        # Check if it's a numeric key
+                        if inner_key.isdigit():
+                            key = inner_key
+                        elif inner_key.startswith("'") and inner_key.endswith("'"):
+                            key = inner_key[1:-1]
+                        elif inner_key.startswith('"') and inner_key.endswith('"'):
+                            key = inner_key[1:-1]
+                    # Handle quoted keys
+                    elif key.startswith("'") and key.endswith("'"):
+                        key = key[1:-1]
+                    elif key.startswith('"') and key.endswith('"'):
+                        key = key[1:-1]
+                    
+                    result[key] = _parse_value(value, key)
+            else:
+                # Handle square bracket notation
+                if key.startswith("[") and key.endswith("]"):
+                    inner_key = key[1:-1].strip()
+                    # Check if it's a numeric key
+                    if inner_key.isdigit():
+                        key = inner_key
+                    elif inner_key.startswith("'") and inner_key.endswith("'"):
+                        key = inner_key[1:-1]
+                    elif inner_key.startswith('"') and inner_key.endswith('"'):
+                        key = inner_key[1:-1]
+                # Handle quoted keys
+                elif key.startswith("'") and key.endswith("'"):
+                    key = key[1:-1]
+                elif key.startswith('"') and key.endswith('"'):
+                    key = key[1:-1]
+                
+                result[key] = _parse_value(value, key)
+            
             current_key = ""
             current_value = ""
             parsing_key = True
@@ -249,20 +290,59 @@ def _parse_table(content: str) -> Dict[str, Any]:
     # Add the last key-value pair if it exists
     if current_key or current_value:
         key = current_key.strip()
-        # Handle square bracket notation
-        if key.startswith("[") and key.endswith("]"):
-            inner_key = key[1:-1].strip()
-            if inner_key.startswith("'") and inner_key.endswith("'"):
-                key = inner_key[1:-1]
-            elif inner_key.startswith('"') and inner_key.endswith('"'):
-                key = inner_key[1:-1]
-        # Handle quoted keys
-        elif key.startswith("'") and key.endswith("'"):
-            key = key[1:-1]
-        elif key.startswith('"') and key.endswith('"'):
-            key = key[1:-1]
         value = current_value.strip()
-        result[key] = _parse_value(value, key)
+        
+        # Handle implicit numeric keys (when there's no equals sign)
+        if not value and key:
+            # Check if it's a number (integer or float)
+            is_number = False
+            try:
+                # Try to parse as a float
+                float_val = float(key)
+                is_number = True
+            except ValueError:
+                pass
+            
+            if is_number:
+                # This is an implicit numeric key
+                result[str(numeric_index)] = float_val
+                numeric_index += 1
+            else:
+                # Handle square bracket notation
+                if key.startswith("[") and key.endswith("]"):
+                    inner_key = key[1:-1].strip()
+                    # Check if it's a numeric key
+                    if inner_key.isdigit():
+                        key = inner_key
+                    elif inner_key.startswith("'") and inner_key.endswith("'"):
+                        key = inner_key[1:-1]
+                    elif inner_key.startswith('"') and inner_key.endswith('"'):
+                        key = inner_key[1:-1]
+                # Handle quoted keys
+                elif key.startswith("'") and key.endswith("'"):
+                    key = key[1:-1]
+                elif key.startswith('"') and key.endswith('"'):
+                    key = key[1:-1]
+                
+                result[key] = _parse_value(value, key)
+        else:
+            # Handle square bracket notation
+            if key.startswith("[") and key.endswith("]"):
+                inner_key = key[1:-1].strip()
+                # Check if it's a numeric key
+                if inner_key.isdigit():
+                    key = inner_key
+                elif inner_key.startswith("'") and inner_key.endswith("'"):
+                    key = inner_key[1:-1]
+                elif inner_key.startswith('"') and inner_key.endswith('"'):
+                    key = inner_key[1:-1]
+            # Handle quoted keys
+            elif key.startswith("'") and key.endswith("'"):
+                key = key[1:-1]
+            elif key.startswith('"') and key.endswith('"'):
+                key = key[1:-1]
+            
+            result[key] = _parse_value(value, key)
     
     return result
 
@@ -326,7 +406,7 @@ def parse(macro: str) -> Any:
             values = _parse_array(content)
             result = {"__name__": name}
             for i, v in enumerate(values):
-                result[i] = v
+                result[str(i)] = v  # Convert integer keys to strings
             return result
         
         # Parse the content as a table
@@ -395,7 +475,7 @@ def manifest(obj):
             pairs = []
             for k, v in obj_copy.items():
                 # Handle numeric keys (like array indices)
-                if isinstance(k, int):
+                if isinstance(k, int) or (isinstance(k, str) and k.isdigit()):
                     pairs.append(f"[{k}] = {manifest(v)}")
                 else:
                     # Quote key only if it's not a valid identifier or contains special characters
@@ -407,7 +487,7 @@ def manifest(obj):
         pairs = []
         for k, v in obj.items():
             # Handle numeric keys (like array indices)
-            if isinstance(k, int):
+            if isinstance(k, int) or (isinstance(k, str) and k.isdigit()):
                 pairs.append(f"[{k}] = {manifest(v)}")
             else:
                 # Use square bracket notation for keys with dots, regardless of quotes
