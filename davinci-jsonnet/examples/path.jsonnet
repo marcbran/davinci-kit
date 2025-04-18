@@ -6,7 +6,8 @@ d.MediaInOut(
       Inputs: {
         // The path input will create a PolyLine under the hood to attach the path to the receiving tool
         // It also creates a displacement BezierSpline input to animate along the path according to the provided keyframes
-        // As such the points are considered as displacements from the center point (0.5, 0.5)
+        //
+        // The points are considered as displacements from the center point (0.5, 0.5)
         Center: d.Input.Path('Foo', {
           '0': { X: 0, Y: 0 },
           '30': { X: 1, Y: 1 },

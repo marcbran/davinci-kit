@@ -5,7 +5,7 @@
 ```jsonnet
 local d = import '../main.libsonnet';
 
-// This function will provide a MediaIn tool to the function for further connections
+// The `MediaInOut` function will provide a MediaIn tool to the passed function for further connections
 // The returned tool will then be connected to a MediaOut tool
 d.MediaInOut(function(mediaIn) mediaIn)
 ```
@@ -19,7 +19,7 @@ local d = import '../main.libsonnet';
 
 d.MediaInOut(
   function(mediaIn)
-    // The blur tool is return from the function and thus will be connected to the MediaOut tool
+    // The blur tool is returned from the function and thus will be connected to the MediaOut tool
     d.Blur('Foo', {
       Inputs: {
         // The blur tool is using the provided MediaIn tool's output as its input
@@ -42,7 +42,7 @@ d.MediaInOut(
     d.Blur('Foo', {
       Inputs: {
         Input: d.Input.Output(mediaIn),
-        // The mask tool's input connects the provided mask tool to the mask input of the receiving tool
+        // The mask input connects the provided mask tool output to the input of the receiving tool
         EffectMask: d.Input.Mask(mask),
       },
     }),
@@ -84,7 +84,8 @@ d.MediaInOut(
       Inputs: {
         // The path input will create a PolyLine under the hood to attach the path to the receiving tool
         // It also creates a displacement BezierSpline input to animate along the path according to the provided keyframes
-        // As such the points are considered as displacements from the center point (0.5, 0.5)
+        //
+        // The points are considered as displacements from the center point (0.5, 0.5)
         Center: d.Input.Path('Foo', {
           '0': { X: 0, Y: 0 },
           '30': { X: 1, Y: 1 },
