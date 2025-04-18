@@ -1,5 +1,3 @@
-run:
-  uv run main.py
 
 install:
   uv tool install --reinstall .
