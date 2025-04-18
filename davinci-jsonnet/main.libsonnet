@@ -48,6 +48,7 @@ local toolNames = [
   'MediaIn',
   'MediaOut',
   'Merge',
+  'PolylineMask',
   'PolyPath',
   'Transform',
 ];
@@ -98,18 +99,47 @@ local inputs = {
     })),
     Path(key, keyFrames)::
       local sortedKeyValues = std.sort(std.objectKeysValues(keyFrames), function(kv) std.parseInt(kv.key));
-      local length = std.length(sortedKeyValues);
-      self.Position($.PolyPath(key, {
+      local points = [kv.value for kv in sortedKeyValues];
+      local distance(a, b) = std.sqrt(std.pow(b.X - a.X, 2) + std.pow(b.Y - a.Y, 2));
+      local length = std.foldl(
+        function(acc, curr) {
+          total: acc.total + distance(acc.prev, curr),
+          prev: curr,
+        },
+        points,
+        { total: 0, prev: points[0] }
+      ).total;
+      local displacements = std.foldl(
+        function(acc, curr) {
+          total: acc.total + distance(acc.prev, curr),
+          displacements: acc.displacements + [if length > 0 then self.total / length else 0],
+          prev: curr,
+        },
+        points,
+        { total: 0, displacements: [], prev: points[0] }
+      ).displacements;
+      $.Input.Position($.PolyPath(key, {
         Inputs: {
           PolyLine: $.Input.Value($.Polyline {
-            Points: [kv.value for kv in sortedKeyValues],
+            Points: points,
           }),
           Displacement: $.Input.Value($.BezierSpline(key, {
             KeyFrames: {
-              [kvi.key]: [if length > 1 then kvi.i / (length - 1) else 1]
+              [kvi.key]: displacements[kvi.i]
               for kvi in std.mapWithIndex(function(i, kv) { i: i } + kv, sortedKeyValues)
             },
           })),
+        },
+      })),
+    Polyline(key, keyFrames)::
+      local sortedKeyValues = std.sort(std.objectKeysValues(keyFrames), function(kv) std.parseInt(kv.key));
+      $.Input.Value($.BezierSpline(key, {
+        KeyFrames: {
+          [kvi.key]: {
+            '1': kvi.i,
+            Value: kvi.value,
+          }
+          for kvi in std.mapWithIndex(function(i, kv) { i: i } + kv, sortedKeyValues)
         },
       })),
   },
@@ -121,10 +151,17 @@ local inputs = {
         {
           [inputKv.key]:
             if std.type(prototypeKeyFrame[inputKv.key]) == 'object'
-            then $.Input.Path('%s%s' % [inputKv.key, key], {
-              [frameKv.key]: frameKv.value[inputKv.key]
-              for frameKv in sortedKeyValues
-            })
+            then
+              if std.get(prototypeKeyFrame[inputKv.key], '__name__', '') == 'Polyline' then
+                $.Input.Polyline('%s%s' % [inputKv.key, key], {
+                  [frameKv.key]: frameKv.value[inputKv.key]
+                  for frameKv in sortedKeyValues
+                })
+              else
+                $.Input.Path('%s%s' % [inputKv.key, key], {
+                  [frameKv.key]: frameKv.value[inputKv.key]
+                  for frameKv in sortedKeyValues
+                })
             else $.Input.BezierSpline('%s%s' % [inputKv.key, key], {
               [frameKv.key]: frameKv.value[inputKv.key]
               for frameKv in sortedKeyValues

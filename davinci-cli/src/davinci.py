@@ -7,7 +7,7 @@ class DavinciError(Exception):
 
 def get_framerate(video_path):
     command = [
-        'ffprobe',
+        '/opt/homebrew/bin/ffprobe',
         '-v', 'error',
         '-select_streams', 'v:0',
         '-show_entries', 'stream=r_frame_rate',
@@ -70,30 +70,26 @@ def get_current_media_pool_item() -> object:
         
     return media_pool_item
 
-def get_composition(clear, add) -> object:
+def get_composition(clear) -> object:
     video_item = get_current_video_item()
-    composition = video_item.GetFusionCompByIndex(1)
 
-    composition_name = None
-    if add:
-        old_compositions = video_item.GetFusionCompNameList()
-        video_item.AddFusionComp()
-        new_compositions = video_item.GetFusionCompNameList()
-        composition_name = list(set(new_compositions) - set(old_compositions))[0]
-    else:
-        composition_name = video_item.GetFusionCompNameList()[-1]
-
-    composition = video_item.GetFusionCompByName(composition_name)
-
+    comp = None
     if clear:
+        comp = video_item.AddFusionComp()
+        video_item.LoadFusionCompByName(comp.GetAttrs("COMPS_Name"))
         for name in video_item.GetFusionCompNameList():
-            if name != composition_name:
-                video_item.DeleteFusionCompByName(name)
+            video_item.DeleteFusionCompByName(name)
 
-        composition.FindToolByID('MediaIn').Delete()
-        composition.FindToolByID('MediaOut').Delete()
+        media_in = comp.FindToolByID('MediaIn')
+        if media_in != None:
+            media_in.Delete()
+        media_out = comp.FindToolByID('MediaOut')
+        if media_out != None:
+            media_out.Delete()
+    else:
+        comp = video_item.GetFusionCompByIndex(1)
 
-    if composition == None:
+    if comp == None:
         raise DavinciError("no composition is currently active")
         
-    return composition
+    return comp
