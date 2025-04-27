@@ -5,6 +5,7 @@ import pyperclip
 import src.macro as macro
 import logging
 from src.logger import setup_logging
+import src.subtitles as subtitles_module
 
 @click.group()
 def cli():
@@ -60,6 +61,30 @@ def get():
         click.echo(json.dumps(info, indent=2))
     except davinci.DavinciError as e:
         logging.error(f"Failed to get timeline information: {str(e)}")
+        click.echo(str(e), err=True)
+        return 1
+
+@timeline.group()
+def subtitles():
+    """Commands for working with subtitles in the current timeline."""
+    pass
+
+@subtitles.command()
+@click.option('--track', 'tracks', type=int, multiple=True, required=True, help='Track number(s) to export subtitles from')
+@click.option('--format', 'format_type', type=click.Choice(['text', 'json', 'srt', 'ttml']), default='text', help='Output format for subtitles')
+def export(tracks, format_type):
+    """Export subtitles from specified tracks in the current timeline."""
+    try:
+        logging.debug(f"Exporting subtitles from tracks: {tracks} with format: {format_type}")
+        
+        subtitles = subtitles_module.export_subtitles(tracks)
+        output = subtitles_module.format_subtitles(subtitles, format_type)
+            
+        logging.info(f"Successfully exported {len(subtitles)} subtitles")
+        click.echo(output)
+        
+    except Exception as e:
+        logging.error(f"Failed to export subtitles: {str(e)}")
         click.echo(str(e), err=True)
         return 1
 
