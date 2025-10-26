@@ -4,7 +4,7 @@ default:
     @just --list
 
 release: test
-    @jsonnet-kit release -b davinci -p davinci -r https://github.com/marcbran/jsonnet.git
+    @jpoet release -b davinci -p davinci -r https://github.com/marcbran/jsonnet.git
 
 test:
-    @jsonnet-kit test
+    @jpoet test
