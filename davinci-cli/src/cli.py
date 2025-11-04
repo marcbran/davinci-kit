@@ -209,5 +209,28 @@ def paste(clear, input_json):
     finally:
         pyperclip.copy(original_clipboard)
 
+@comp.command()
+def convert():
+    """Converts content from stdin into Lua table format."""
+    try:
+        input = click.get_text_stream('stdin').read()
+
+        try:
+            content = json.loads(input)
+            settings = macro.manifest(content)
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to parse JSON input: {str(e)}")
+            click.echo(f"Error parsing JSON: {str(e)}", err=True)
+            return 1
+
+        click.echo(settings)
+
+        logging.info("Successfully converted composition settings")
+
+    except davinci.DavinciError as e:
+        logging.error(f"Failed to convert composition: {str(e)}")
+        click.echo(str(e), err=True)
+        return 1
+
 if __name__ == "__main__":
     cli()
