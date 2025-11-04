@@ -1,29 +1,29 @@
 # davinci-jsonnet examples
 
-## MediaInOut
+## Effect
 
 ```jsonnet
 local d = import '../main.libsonnet';
 
-// The `MediaInOut` function will provide a MediaIn tool to the passed function for further connections
+// The `Effect` function will provide a MediaIn tool to the passed function for further connections
 // The returned tool will then be connected to a MediaOut tool
-d.MediaInOut(function(mediaIn) mediaIn)
+d.Effect(function(mediaIn) mediaIn)
 ```
 
-![mediaInOut.png](mediaInOut.png)
+![effect.png](effect.png)
 
 ## Single Tool
 
 ```jsonnet
 local d = import '../main.libsonnet';
 
-d.MediaInOut(
+d.Effect(
   function(mediaIn)
     // The blur tool is returned from the function and thus will be connected to the MediaOut tool
     d.Blur('Foo', {
       Inputs: {
         // The blur tool is using the provided MediaIn tool's output as its input
-        Input: d.Input.Output(mediaIn),
+        Input: mediaIn,
       },
     }),
 )
@@ -36,14 +36,14 @@ d.MediaInOut(
 ```jsonnet
 local d = import '../main.libsonnet';
 
-d.MediaInOut(
+d.Effect(
   function(mediaIn)
     local mask = d.EllipseMask('Foo', {});
     d.Blur('Foo', {
       Inputs: {
-        Input: d.Input.Output(mediaIn),
-        // The mask input connects the provided mask tool output to the input of the receiving tool
-        EffectMask: d.Input.Mask(mask),
+        Input: mediaIn,
+        // The output of mask tools are automatically connected to the mask input of the receiving tool
+        EffectMask: mask,
       },
     }),
 )
@@ -51,18 +51,35 @@ d.MediaInOut(
 
 ![mask.png](mask.png)
 
+## Chain Merge
+
+```jsonnet
+local d = import '../main.libsonnet';
+
+d.Generator(
+  // The ChainMerge function is a utility to chain n tools together with n-1 Merge tools
+  d.ChainMerge('FooBar', [
+    d.EllipseMask('Foo', {}),
+    d.EllipseMask('Bar', {}),
+    d.EllipseMask('Baz', {}),
+  ]),
+)
+```
+
+![chainMerge.png](chainMerge.png)
+
 ## Bezier Spline
 
 ```jsonnet
 local d = import '../main.libsonnet';
 
-d.MediaInOut(
+d.Effect(
   function(mediaIn)
     d.Blur('Foo', {
       Inputs: {
-        Input: d.Input.Output(mediaIn),
+        Input: mediaIn,
         // The bezier spline input will animate a single value between the provided key frames
-        XBlurSize: d.Input.BezierSpline('Foo', {
+        XBlurSize: d.BezierSpline('Foo', {
           '0': 0,
           '30': 1,
         }),
@@ -78,7 +95,7 @@ d.MediaInOut(
 ```jsonnet
 local d = import '../main.libsonnet';
 
-d.MediaInOut(
+d.Effect(
   function(mediaIn)
     local mask = d.EllipseMask('Foo', {
       Inputs: {
@@ -86,7 +103,7 @@ d.MediaInOut(
         // It also creates a displacement BezierSpline input to animate along the path according to the provided keyframes
         //
         // The points are considered as displacements from the center point (0.5, 0.5)
-        Center: d.Input.Path('Foo', {
+        Center: d.Path('Foo', {
           '0': { X: 0, Y: 0 },
           '30': { X: 1, Y: 1 },
         }),
@@ -94,8 +111,8 @@ d.MediaInOut(
     });
     d.Blur('Foo', {
       Inputs: {
-        Input: d.Input.Output(mediaIn),
-        EffectMask: d.Input.Mask(mask),
+        Input: mediaIn,
+        EffectMask: mask,
       },
     }),
 )
@@ -108,27 +125,27 @@ d.MediaInOut(
 ```jsonnet
 local d = import '../main.libsonnet';
 
-d.MediaInOut(
+d.Effect(
   function(mediaIn)
     local mask = d.PolylineMask('Foo', {
       Inputs: {
         // The polyline input can be used to animate a polyline (or polygon) between multiple key frames
-        Polyline: d.Input.Polyline('Foo', {
-          '0': d.Polyline {
+        Polyline: d.PolylineBezierSpline('Foo', {
+          '0': d.Polyline({
             Closed: true,
             Points: [{ X: 0, Y: 0 }, { X: 1, Y: 0 }, { X: 1, Y: 1 }, { X: 0, Y: 1 }],
-          },
-          '30': d.Polyline {
+          }),
+          '30': d.Polyline({
             Closed: true,
             Points: [{ X: -1, Y: -1 }, { X: 2, Y: -1 }, { X: 2, Y: 2 }, { X: -1, Y: 2 }],
-          },
+          }),
         }),
       },
     });
     d.Blur('Foo', {
       Inputs: {
-        Input: d.Input.Output(mediaIn),
-        EffectMask: d.Input.Mask(mask),
+        Input: mediaIn,
+        EffectMask: mask,
       },
     }),
 )

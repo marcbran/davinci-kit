@@ -1,6 +1,6 @@
 local d = import '../main.libsonnet';
 
-d.MediaInOut(
+d.Effect(
   function(mediaIn)
     local mask = d.EllipseMask('Foo', {
       Inputs: {
@@ -8,7 +8,7 @@ d.MediaInOut(
         // It also creates a displacement BezierSpline input to animate along the path according to the provided keyframes
         //
         // The points are considered as displacements from the center point (0.5, 0.5)
-        Center: d.Input.Path('Foo', {
+        Center: d.Path('Foo', {
           '0': { X: 0, Y: 0 },
           '30': { X: 1, Y: 1 },
         }),
@@ -16,8 +16,8 @@ d.MediaInOut(
     });
     d.Blur('Foo', {
       Inputs: {
-        Input: d.Input.Output(mediaIn),
-        EffectMask: d.Input.Mask(mask),
+        Input: mediaIn,
+        EffectMask: mask,
       },
     }),
 )

@@ -3,11 +3,15 @@ local d = import '../main.libsonnet';
 d.Effect(
   function(mediaIn)
     local mask = d.EllipseMask('Foo', {});
-    d.Blur('Foo', {
+    local blur = d.Blur('Foo', {
       Inputs: {
         Input: mediaIn,
-        // The output of mask tools are automatically connected to the mask input of the receiving tool
         EffectMask: mask,
+      },
+    });
+    d.Group('Foo', {
+      Outputs: {
+        Output1: blur,
       },
     }),
 )
